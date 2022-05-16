@@ -5,4 +5,6 @@ import org.example.door.api.vo.DataVO;
 
 public interface DataService {
     DataVO getData(GetDataReq req);
+
+    void releaseDataVO(String key);
 }

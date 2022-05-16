@@ -1,12 +1,13 @@
 package org.example.door.api.req;
 
+import com.tove.web.infra.common.Page;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
 import java.util.Date;
 
 @Data
-public class GetConfigLogAdminReq {
+public class GetConfigLogAdminReq extends Page {
 
     @ApiModelProperty(value = "key")
     private String key;
@@ -18,9 +19,9 @@ public class GetConfigLogAdminReq {
     private String content;
 
     @ApiModelProperty(value = "start")
-    private Date start;
+    private Date startDate;
 
     @ApiModelProperty(value = "end")
-    private Date end;
+    private Date endDate;
 
 }

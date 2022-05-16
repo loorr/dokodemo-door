@@ -1,5 +1,6 @@
 package org.example.door.dao;
 
+import com.github.pagehelper.Page;
 import org.apache.ibatis.annotations.*;
 import org.example.door.api.req.AddOrUpdataConfigAdminReq;
 import org.example.door.api.req.DeleteConfigAdminReq;
@@ -23,7 +24,7 @@ public interface DataAdminMapper {
             "<if test='content != null and content !=\"\"'>and `content`  like CONCAT('%', #{content}, '%') </if>" +
             "</where>" +
             "</script>")
-    List<Config> getConfig(GetConfigAdminReq req);
+    Page<Config> getConfig(GetConfigAdminReq req);
 
 
     @Select("<script>" +
@@ -35,7 +36,7 @@ public interface DataAdminMapper {
             "</where>" +
             "order by update_time desc" +
             "</script>")
-    List<ConfigLog> getConfigLog(GetConfigAdminReq req);
+    Page<ConfigLog> getConfigLog(GetConfigAdminReq req);
 
     @Options(useGeneratedKeys=true,keyProperty="id")
     @Insert("insert into `config`(`key`,`secret_key`,`describe`,`content`,`state`)" +

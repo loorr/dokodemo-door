@@ -1,9 +1,15 @@
 package org.example.door.service.impl;
 
 import com.alibaba.fastjson.JSON;
+import com.github.pagehelper.Page;
+import com.github.pagehelper.PageHelper;
+import com.tove.web.infra.common.BaseErrorCode;
+import com.tove.web.infra.common.BaseException;
+import com.tove.web.infra.common.PageResult;
 import org.example.door.api.req.AddOrUpdataConfigAdminReq;
 import org.example.door.api.req.DeleteConfigAdminReq;
 import org.example.door.api.req.GetConfigAdminReq;
+import org.example.door.api.req.GetDataReq;
 import org.example.door.api.vo.ConfigLogVO;
 import org.example.door.api.vo.ConfigVO;
 import org.example.door.dao.DataAdminMapper;
@@ -11,6 +17,7 @@ import org.example.door.model.Config;
 import org.example.door.model.ConfigLog;
 import org.example.door.model.StateEnum;
 import org.example.door.service.DataAdminService;
+import org.example.door.service.DataService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,48 +33,58 @@ public class DataAdminServiceImpl implements DataAdminService {
     @Resource
     private DataAdminMapper dataAdminMapper;
 
+    @Resource
+    private DataService dataService;
+
     @Override
-    public List<ConfigVO> getConfig(GetConfigAdminReq req) {
-        List<Config> list =  dataAdminMapper.getConfig(req);
-        return list.stream().map(o->{
+    public PageResult<ConfigVO> getConfig(GetConfigAdminReq req) {
+        PageHelper.startPage(req.getPage(), req.getRows());
+        Page<Config> list =  dataAdminMapper.getConfig(req);
+        List<ConfigVO> configVOList =  list.stream().map(o->{
             ConfigVO configVO = new ConfigVO();
             BeanUtils.copyProperties(o,configVO);
             configVO.setState(StateEnum.of(o.getState()));
             configVO.setContent(JSON.parseObject(o.getContent(), JSON.class));
             return configVO;
         }).collect(Collectors.toList());
+        return new PageResult<ConfigVO>(list.getTotal(), configVOList);
     }
 
     @Override
-    public List<ConfigLogVO> getConfigLog(GetConfigAdminReq req) {
-        List<ConfigLog> list = dataAdminMapper.getConfigLog(req);
+    public PageResult<ConfigLogVO> getConfigLog(GetConfigAdminReq req) {
+        Page<ConfigLog> page = dataAdminMapper.getConfigLog(req);
 
-        return list.stream().map(o->{
+        List<ConfigLogVO> list = page.stream().map(o->{
             ConfigLogVO vo = new ConfigLogVO();
             BeanUtils.copyProperties(o,vo);
             vo.setContent(JSON.parseObject(o.getContent(), JSON.class));
             return vo;
         }).collect(Collectors.toList());
+        return new PageResult<ConfigLogVO>(page.getTotal(), list);
     }
 
     @Transactional
     @Override
     public Boolean updateConfig(AddOrUpdataConfigAdminReq req) {
-        if (req.getId() == null){
+        if (req.getId() == null || !checkDataFormat(req.getContent())){
             return false;
         }
         Config config = new Config();
         BeanUtils.copyProperties(req, config);
         updateConfig(config);
+        refreshDataVO(req.getKey());
         return true;
     }
 
     @Override
     public Boolean addConfig(AddOrUpdataConfigAdminReq req) {
+        checkDataFormat(req.getContent());
+
         Config config = new Config();
         BeanUtils.copyProperties(req, config);
         config.setState(req.getState().getCode());
         int rows = dataAdminMapper.addConfig(config);
+        refreshDataVO(req.getKey());
         return rows>0;
     }
 
@@ -78,6 +95,7 @@ public class DataAdminServiceImpl implements DataAdminService {
         Config config = dataAdminMapper.getConfigById(id);
         ConfigLog configLog = configToLog(config);
         deleteConfig(id, configLog);
+        refreshDataVO(config.getKey());
         return true;
     }
 
@@ -101,6 +119,22 @@ public class DataAdminServiceImpl implements DataAdminService {
         BeanUtils.copyProperties(config, configLog);
         configLog.setUpdateTime(new Date());
         return configLog;
+    }
+    
+    private boolean checkDataFormat(String data){
+        try {
+            JSON.parseObject(data, JSON.class);
+        }catch (Exception e){
+            throw new BaseException(BaseErrorCode.ILLEGAL_PARAMETERS);
+        }
+        return true;
+    }
+
+    private void refreshDataVO(String key){
+        dataService.releaseDataVO(key);
+        GetDataReq req = new GetDataReq();
+        req.setKey(key);
+        dataService.getData(req);
     }
 
 }

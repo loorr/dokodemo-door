@@ -1,5 +1,6 @@
 package org.example.door.api.controller;
 
+import com.tove.web.infra.common.PageResult;
 import com.tove.web.infra.common.Response;
 import org.example.door.api.DataAdminApi;
 import org.example.door.api.req.AddOrUpdataConfigAdminReq;
@@ -20,14 +21,14 @@ public class DataAdminController implements DataAdminApi {
     private DataAdminService dataAdminService;
 
     @Override
-    public Response<List<ConfigVO>> getConfig(GetConfigAdminReq req) {
-        List<ConfigVO> configVO = dataAdminService.getConfig(req);
+    public Response<PageResult<ConfigVO>> getConfigPage(GetConfigAdminReq req) {
+        PageResult<ConfigVO> configVO = dataAdminService.getConfig(req);
         return Response.getOk(configVO);
     }
 
     @Override
-    public Response<List<ConfigLogVO>> getConfigLog(GetConfigAdminReq req) {
-        List<ConfigLogVO> result = dataAdminService.getConfigLog(req);
+    public Response<PageResult<ConfigLogVO>> getConfigLog(GetConfigAdminReq req) {
+        PageResult<ConfigLogVO> result = dataAdminService.getConfigLog(req);
         return Response.getOk(result);
     }
 
